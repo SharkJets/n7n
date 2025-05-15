@@ -129,7 +129,6 @@ export default {
                         "X-N8N-API-KEY": this.settings.key
                     }
                 });
-                console.log(response);
                 this.dump = JSON.stringify(response);
 
                 if (!response.ok) {
@@ -160,8 +159,6 @@ export default {
                 this.isLoading = false;
             } catch (err) {
                 this.isLoading = false;
-                console.log(this.error);
-                console.error('Error loading n8n data:', err);
             }
         },
         applyModeFilter() {
