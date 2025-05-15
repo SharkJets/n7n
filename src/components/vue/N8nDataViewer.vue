@@ -10,7 +10,6 @@
         </div>
 
         <div v-else-if="n8nData" class="data-container">
-            <h2>N8N Data</h2>
             <div class="data-summary">
                 <p>Total Entries: {{ n8nData.data.length }}</p>
                 <button class="toggle-all-btn" @click="toggleAllExpanded">
@@ -24,6 +23,7 @@
                         <div class="header-left">
                             <span class="expand-icon">{{ expandedItems[index] ? '▼' : '►' }}</span>
                             <h3>{{ item.workflowData.name }}</h3>
+                            {{ new Date(item.startedAt).toLocaleString() }}
                         </div>
                         <span class="status" :class="{ 'finished': item.finished, 'pending': !item.finished }">
                             {{ item.finished ? 'Finished' : 'Incomplete' }}
@@ -134,7 +134,6 @@ export default {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 1rem;
 }
 
 .loading, .error-card, .no-data {
@@ -265,13 +264,16 @@ export default {
     margin-bottom: 1rem;
     color: #546e7a;
     font-size: 1rem;
+    padding-left: 0.5rem;
 }
 
 .json-viewer {
-    background: #f8f9fa;
-    border-radius: 4px;
-    padding: 1rem;
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 0;
     overflow: auto;
-    max-height: 500px;
+    max-height: 600px;
+    width: 100%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 </style>
