@@ -2,6 +2,7 @@
     <div class="n8n-data-viewer">
         <div class="nav">
             <button v-on:click="refresh">Refresh</button>
+            <div>N7N</div>
             <button v-on:click="logout">Logout</button>
         </div>
 
@@ -26,12 +27,25 @@
                             <option value="100">100 entries</option>
                         </select>
                     </div>
+                    <div class="data-controls">
+                        <label for="limit-select">Status:</label>
+                        <select id="limit-select" v-model="selectedStatus" @change="fetchData">
+                            <option value="all">All</option>
+                            <option value="success">success</option>
+                            <option value="waiting">waiting</option>
+                            <option value="error">error</option>                            
+                        </select>
+                    </div>
+                </div>                
+            </div>
+            <div class="heading">
+                <div class="data-summary">
                     <div class="controls">
                         <div class="mode-filter">
-                            <label for="mode-select">Mode:</label>
-                            <select id="mode-select" v-model="selectedMode" @change="applyModeFilter">
-                                <option value="all">All Modes</option>
-                                <option v-for="mode in availableModes" :key="mode" :value="mode">{{ mode }}</option>
+                            <label for="mode-select">Workflow:</label>
+                            <select id="mode-select" v-model="selectedWorkflow" @change="fetchData">
+                                <option value="all">All Workflows</option>
+                                <option v-for="flow in availableWorkflows" :key="flow.name" :value="flow.id">{{ flow.name }}</option>
                             </select>
                         </div>
                     </div>
@@ -53,6 +67,14 @@
                                 <div><span class="label">Last Node:</span></div>
                                 <div>{{  item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.execution.lastNodeExecuted  }}</div>
                             </div>
+                            <div v-if="item.data.resultData.error">
+                                <div><span class="label">Error:</span></div>
+                                <div>{{  item.data.resultData.error.message  }}</div>
+                                <div v-if="item.data.resultData.error.node">
+                                    <div><span class="label">Node:</span></div>
+                                    <div>{{  item.data.resultData.error.node.name  }}</div>
+                                </div>
+                            </div>                            
                         </div>
                         <span class="status" :class="{ 'finished': item.finished, 'pending': !item.finished }">
                             {{ item.mode }}
@@ -101,7 +123,12 @@ export default {
             expandedItems: {},
             allExpanded: false,
             selectedMode: 'all',
-            availableModes: []
+            availableModes: [],
+            status: true,
+            selectedStatus: 'all',
+            availableWorkflows: [],
+            selectedWorkflow: 'all',
+            hasError: false
         };
     },
     computed: {
@@ -124,7 +151,9 @@ export default {
                 this.allExpanded = false;
                 
                 // Fetch the n8n data with the selected limit
-                const response = await fetch(`${this.settings.url}/api/v1/executions?includeData=true&limit=${this.itemLimit}`, {
+                let statusFilter = this.selectedStatus != 'all' ? `&status=${this.selectedStatus}` : '';
+                let workflowFilter = this.selectedWorkflow != 'all' ? `&workflowId=${this.selectedWorkflow}` : '';
+                const response = await fetch(`${this.settings.url}/api/v1/executions?includeData=true&limit=${this.itemLimit}${statusFilter}${workflowFilter}`, {
                     headers: {
                         "X-N8N-API-KEY": this.settings.key
                     }
@@ -147,6 +176,17 @@ export default {
                         }
                     });
                     this.availableModes = Array.from(modes).sort();
+
+                    const flows = new Set();
+                    let knownFlows = [];
+                    this.n8nData.data.forEach(item => {
+                        if (item.workflowData) {
+                            if(knownFlows.includes(item.workflowData.name)) return;
+                            knownFlows.push(item.workflowData.name);
+                            flows.add({name: item.workflowData.name, id: item.workflowData.id});
+                        }
+                    });
+                    this.availableWorkflows = Array.from(flows).sort();                    
                     
                     // Initialize expandedItems with all items collapsed
                     const initialExpandedItems = {};
@@ -197,7 +237,6 @@ export default {
             this.allExpanded = expandedCount === this.n8nData.data.length;
         },
         async logout(){
-            console.log('logout');
             await Preferences.remove({key: "settings"});
             this.settings = null;
             document.location = '/';
