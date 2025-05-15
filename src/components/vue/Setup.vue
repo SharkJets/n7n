@@ -1,9 +1,8 @@
 <template>
     <div>
-        <h1>user: {{ user.value }}</h1>
-        <h1>Please enter your API settings..</h1>
-        <div>Domain: <input type="text" name="api_url" id="api_url" /></div>
-        <div>API Key: <input type="text" name="api_key" id="api_key" /></div>
+        <h1>Enter your API settings..</h1>
+        <div>Domain: <input type="text" name="api_url" id="api_url" v-model="url" placeholder="https://www.example.com" /></div>
+        <div>API Key: <input type="text" name="api_key" id="api_key" v-model="key" placeholder="xyz123..." /></div>
     </div>
 </template>
 <script>
@@ -11,27 +10,31 @@ import { Preferences } from "@capacitor/preferences";
 export default {
     data() {
         return {
-            user: null,
+            url: '',
+            key: '',
+            settings: null,
         };
     },
     mounted() {
-        console.log('hi');
-        this.getUser();
-        if(this.user == null){
-            this.setUser();
+        this.getSettings();
+        if (this.settings == null) {
+            this.SetSettings();
         }
     },
     methods: {
-        async getUser() {
-            this.user = await Preferences.get({ key: "user" });
-            console.log(`set: ${this.user}`);
+        async getSettings() {
+            this.settings = await Preferences.get({ key: "settings" });
+            console.log(`set: ${this.settings}`);
         },
-        async setUser() {
+        async SetSettings() {
             await Preferences.set({
-                key: "user",
-                value: "joe"
+                key: "settings",
+                value: JSON.stringify({
+                    url: this.url,
+                    key: this.key,
+                }),
             });
-            this.getUser();
+            this.getSettings();
         },
     },
 };
