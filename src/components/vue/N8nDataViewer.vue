@@ -218,6 +218,7 @@ export default {
 .nav{
     display:flex;
     justify-content: space-between;
+    padding: 1rem;
 }
 
 .label{
