@@ -149,16 +149,39 @@ export default {
                 this.error = null;
                 this.expandedItems = {};
                 this.allExpanded = false;
-                
-                // Fetch the n8n data with the selected limit
-                let statusFilter = this.selectedStatus != 'all' ? `&status=${this.selectedStatus}` : '';
-                let workflowFilter = this.selectedWorkflow != 'all' ? `&workflowId=${this.selectedWorkflow}` : '';
-                const response = await fetch(`${this.settings.url}/api/v1/executions?includeData=true&limit=${this.itemLimit}${statusFilter}${workflowFilter}`, {
+
+                //https://n8n.sharkjets.com/api/v1/workflows?active=true&excludePinnedData=true&limit=100
+                let response = await fetch(`${this.settings.url}/api/v1/workflows?active=true&excludePinnedData=true&limit=100`, {
                     headers: {
                         "X-N8N-API-KEY": this.settings.key
                     }
                 });
-                this.dump = JSON.stringify(response);
+
+                if (!response.ok) {
+                    this.error = `Failed to load data: ${response.status} ${response.statusText}`;
+                    throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
+                }
+                
+                this.n8nData = await response.json();     
+                    const flows = new Set();
+                    let knownFlows = [];
+                    this.n8nData.data.forEach(item => {
+                        if (item) {
+                            if(knownFlows.includes(item.name)) return;
+                            knownFlows.push(item.name);
+                            flows.add({name: item.name, id: item.id});
+                        }
+                    });
+                    this.availableWorkflows = Array.from(flows).sort();                            
+                
+                // Fetch the n8n data with the selected limit
+                let statusFilter = this.selectedStatus != 'all' ? `&status=${this.selectedStatus}` : '';
+                let workflowFilter = this.selectedWorkflow != 'all' ? `&workflowId=${this.selectedWorkflow}` : '';
+                response = await fetch(`${this.settings.url}/api/v1/executions?includeData=true&limit=${this.itemLimit}${statusFilter}${workflowFilter}`, {
+                    headers: {
+                        "X-N8N-API-KEY": this.settings.key
+                    }
+                });
 
                 if (!response.ok) {
                     this.error = `Failed to load data: ${response.status} ${response.statusText}`;
@@ -175,18 +198,7 @@ export default {
                             modes.add(item.mode);
                         }
                     });
-                    this.availableModes = Array.from(modes).sort();
-
-                    const flows = new Set();
-                    let knownFlows = [];
-                    this.n8nData.data.forEach(item => {
-                        if (item.workflowData) {
-                            if(knownFlows.includes(item.workflowData.name)) return;
-                            knownFlows.push(item.workflowData.name);
-                            flows.add({name: item.workflowData.name, id: item.workflowData.id});
-                        }
-                    });
-                    this.availableWorkflows = Array.from(flows).sort();                    
+                    this.availableModes = Array.from(modes).sort();                   
                     
                     // Initialize expandedItems with all items collapsed
                     const initialExpandedItems = {};
