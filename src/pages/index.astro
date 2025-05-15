@@ -1,6 +1,6 @@
 ---
 import Layout from "../layouts/layout.astro";
-import Header from "../components/vue/Header.vue";
+import Setup from "../components/vue/Setup.vue";
 import N8nDataViewer from "../components/vue/N8nDataViewer.vue";
 
 const inputs = {
@@ -10,5 +10,6 @@ const inputs = {
 }
 ---
 <Layout>
+	<Setup client:load></Setup>
 	<N8nDataViewer inputs={inputs} client:load></N8nDataViewer>
 </Layout>
