@@ -61,6 +61,7 @@ export default {
     components: {
         JsonViewer
     },
+    props:['inputs'],
     data() {
         return {
             n8nData: null,
@@ -105,7 +106,11 @@ export default {
     async mounted() {
         try {
             // Fetch the n8n.json file from the public directory
-            const response = await fetch('/n8n.json');
+            const response = await fetch(this.inputs.url, {
+                headers: {
+                    "X-N8N-API-KEY": this.inputs.token
+                }
+            });
             if (!response.ok) {
                 throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
             }

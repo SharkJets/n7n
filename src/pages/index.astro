@@ -2,7 +2,13 @@
 import Layout from "../layouts/layout.astro";
 import Header from "../components/vue/Header.vue";
 import N8nDataViewer from "../components/vue/N8nDataViewer.vue";
+
+const inputs = {
+	key: 'X-N8N-API-KEY',
+	token: import.meta.env.APIKEY,
+	url: import.meta.env.APIURL
+}
 ---
 <Layout>
-	<N8nDataViewer client:load></N8nDataViewer>
+	<N8nDataViewer inputs={inputs} client:load></N8nDataViewer>
 </Layout>
