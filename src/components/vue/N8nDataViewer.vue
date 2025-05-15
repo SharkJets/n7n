@@ -11,19 +11,33 @@
 
         <div v-else-if="n8nData" class="data-container">
             <div class="data-summary">
-                <p>Total Entries: {{ n8nData.data.length }}</p>
-                <button class="toggle-all-btn" @click="toggleAllExpanded">
-                    {{ allExpanded ? 'Collapse All' : 'Expand All' }}
-                </button>
+                <div class="data-controls">
+                    <label for="limit-select">Show:</label>
+                    <select id="limit-select" v-model="itemLimit" @change="fetchData">
+                        <option value="10">10 entries</option>
+                        <option value="20">20 entries</option>
+                        <option value="50">50 entries</option>
+                        <option value="100">100 entries</option>
+                    </select>
+                </div>
+                <div class="controls">
+                    <div class="mode-filter">
+                        <label for="mode-select">Mode:</label>
+                        <select id="mode-select" v-model="selectedMode" @change="applyModeFilter">
+                            <option value="all">All Modes</option>
+                            <option v-for="mode in availableModes" :key="mode" :value="mode">{{ mode }}</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             <div class="data-list">
-                <div v-for="(item, index) in n8nData.data" :key="index" class="data-item">
+                <div v-for="(item, index) in filteredData" :key="index" class="data-item">
                     <div class="data-header" @click="toggleExpanded(index)">
                         <div class="header-left">
                             <span class="expand-icon">{{ expandedItems[index] ? '▼' : '►' }}</span>
                             <h3>{{ item.workflowData.name }}</h3>
-                            <div>{{ new Date(item.startedAt).toLocaleString() }}</div>
+                            <div>{{ new Date(item.startedAt).toISOString().slice(0, 16).replace('T', ' ') }}</div>
                             <div v-if="item.data.resultData.runData['Error Trigger']">
                                 <div><span class="label">Workflow:</span></div>
                                 <div>{{  item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.workflow.name  }}</div>
@@ -72,14 +86,78 @@ export default {
     props:['inputs'],
     data() {
         return {
+            itemLimit: 100,
             n8nData: null,
             isLoading: true,
             error: null,
             expandedItems: {},
-            allExpanded: false
+            allExpanded: false,
+            selectedMode: 'all',
+            availableModes: []
         };
     },
+    computed: {
+        filteredData() {
+            if (!this.n8nData || !this.n8nData.data) return [];
+            
+            if (this.selectedMode === 'all') {
+                return this.n8nData.data;
+            }
+            
+            return this.n8nData.data.filter(item => item.mode === this.selectedMode);
+        }
+    },
     methods: {
+        async fetchData() {
+            try {
+                this.isLoading = true;
+                this.error = null;
+                this.expandedItems = {};
+                this.allExpanded = false;
+                
+                // Fetch the n8n data with the selected limit
+                const response = await fetch(`${this.inputs.url}&limit=${this.itemLimit}`, {
+                    headers: {
+                        "X-N8N-API-KEY": this.inputs.token
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
+                }
+                
+                this.n8nData = await response.json();
+                
+                // Extract unique modes from data
+                if (this.n8nData && this.n8nData.data) {
+                    const modes = new Set();
+                    this.n8nData.data.forEach(item => {
+                        if (item.mode) {
+                            modes.add(item.mode);
+                        }
+                    });
+                    this.availableModes = Array.from(modes).sort();
+                    
+                    // Initialize expandedItems with all items collapsed
+                    const initialExpandedItems = {};
+                    this.n8nData.data.forEach((_, index) => {
+                        initialExpandedItems[index] = false;
+                    });
+                    this.expandedItems = initialExpandedItems;
+                }
+                
+                this.isLoading = false;
+            } catch (err) {
+                this.error = err.message;
+                this.isLoading = false;
+                console.error('Error loading n8n data:', err);
+            }
+        },
+        applyModeFilter() {
+            // Reset expanded items when filter changes
+            this.expandedItems = {};
+            this.allExpanded = false;
+        },
         toggleExpanded(index) {
             // Using direct assignment instead of $set
             this.expandedItems = {
@@ -112,33 +190,8 @@ export default {
         }
     },
     async mounted() {
-        try {
-            // Fetch the n8n.json file from the public directory
-            const response = await fetch(this.inputs.url, {
-                headers: {
-                    "X-N8N-API-KEY": this.inputs.token
-                }
-            });
-            if (!response.ok) {
-                throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
-            }
-            this.n8nData = await response.json();
-
-            // Initialize expandedItems with all items collapsed
-            if (this.n8nData && this.n8nData.data) {
-                const initialExpandedItems = {};
-                this.n8nData.data.forEach((_, index) => {
-                    initialExpandedItems[index] = false;
-                });
-                this.expandedItems = initialExpandedItems;
-            }
-
-            this.isLoading = false;
-        } catch (err) {
-            this.error = err.message;
-            this.isLoading = false;
-            console.error('Error loading n8n data:', err);
-        }
+        // Load data on component mount
+        await this.fetchData();
     }
 };
 </script>
@@ -180,6 +233,40 @@ export default {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.data-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.data-controls label,
+.mode-filter label {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.data-controls select,
+.mode-filter select {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #cfd8dc;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.mode-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .toggle-all-btn {
