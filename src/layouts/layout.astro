@@ -5,9 +5,9 @@
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
+		<title>n7n</title>
 	</head>
 	<body>
 		<slot></slot>
@@ -16,7 +16,15 @@
 
 <style>
 	body{
-		padding-top:3rem;
-		background-color: #aaa;
+		padding: 1rem;
+		background-color: #f0f2f5;
+		margin: 0;
+		font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+	}
+	
+	@media (max-width: 768px) {
+		body {
+			padding: 0.5rem;
+		}
 	}
 </style>
