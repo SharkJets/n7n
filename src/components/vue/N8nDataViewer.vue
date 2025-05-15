@@ -23,10 +23,18 @@
                         <div class="header-left">
                             <span class="expand-icon">{{ expandedItems[index] ? '▼' : '►' }}</span>
                             <h3>{{ item.workflowData.name }}</h3>
-                            {{ new Date(item.startedAt).toLocaleString() }}
+                            <div>{{ new Date(item.startedAt).toLocaleString() }}</div>
+                            <div v-if="item.data.resultData.runData['Error Trigger']">
+                                <div><span class="label">Workflow:</span></div>
+                                <div>{{  item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.workflow.name  }}</div>
+                                <div><span class="label">Error:</span></div>
+                                <div>{{  item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.execution.error.message  }}</div>
+                                <div><span class="label">Last Node:</span></div>
+                                <div>{{  item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.execution.lastNodeExecuted  }}</div>
+                            </div>
                         </div>
                         <span class="status" :class="{ 'finished': item.finished, 'pending': !item.finished }">
-                            {{ item.finished ? 'Finished' : 'Incomplete' }}
+                            {{ item.mode }}
                         </span>
                     </div>
 
@@ -135,6 +143,10 @@ export default {
 };
 </script>
 <style>
+.label{
+    font-weight: bold;
+}
+
 .n8n-data-viewer {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     max-width: 1200px;

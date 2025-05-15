@@ -13,11 +13,7 @@
         
         <div v-if="isExpanded" class="json-object-content">
           <div v-for="(value, key) in data" :key="key" class="json-item">
-            <JsonViewer 
-              :data="value" 
-              :prop-key="key" 
-              :level="level + 1" 
-            />
+            <JsonViewer :data="value" :prop-key="key" :level="level + 1"  />
           </div>
         </div>
       </div>
