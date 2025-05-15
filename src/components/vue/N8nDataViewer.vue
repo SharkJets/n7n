@@ -10,25 +10,31 @@
         </div>
 
         <div v-else-if="n8nData" class="data-container">
-            <div class="data-summary">
-                <div class="data-controls">
-                    <label for="limit-select">Show:</label>
-                    <select id="limit-select" v-model="itemLimit" @change="fetchData">
-                        <option value="10">10 entries</option>
-                        <option value="20">20 entries</option>
-                        <option value="50">50 entries</option>
-                        <option value="100">100 entries</option>
-                    </select>
+            <div class="heading">
+                <div class="nav">
+                    <button v-on:click="refresh">Refresh</button>
+                    <button v-on:click="logout">Logout</button>
                 </div>
-                <div class="controls">
-                    <div class="mode-filter">
-                        <label for="mode-select">Mode:</label>
-                        <select id="mode-select" v-model="selectedMode" @change="applyModeFilter">
-                            <option value="all">All Modes</option>
-                            <option v-for="mode in availableModes" :key="mode" :value="mode">{{ mode }}</option>
+                <div class="data-summary">
+                    <div class="data-controls">
+                        <label for="limit-select">Show:</label>
+                        <select id="limit-select" v-model="itemLimit" @change="fetchData">
+                            <option value="10">10 entries</option>
+                            <option value="20">20 entries</option>
+                            <option value="50">50 entries</option>
+                            <option value="100">100 entries</option>
                         </select>
                     </div>
-                </div>
+                    <div class="controls">
+                        <div class="mode-filter">
+                            <label for="mode-select">Mode:</label>
+                            <select id="mode-select" v-model="selectedMode" @change="applyModeFilter">
+                                <option value="all">All Modes</option>
+                                <option v-for="mode in availableModes" :key="mode" :value="mode">{{ mode }}</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>                
             </div>
 
             <div class="data-list">
@@ -78,15 +84,16 @@
 </template>
 <script>
 import JsonViewer from './JsonViewer.vue';
+import { Preferences } from "@capacitor/preferences";
 
 export default {
     components: {
         JsonViewer
     },
-    props:['inputs'],
     data() {
         return {
-            itemLimit: 100,
+            settings: null,
+            itemLimit: 10,
             n8nData: null,
             isLoading: true,
             error: null,
@@ -116,9 +123,9 @@ export default {
                 this.allExpanded = false;
                 
                 // Fetch the n8n data with the selected limit
-                const response = await fetch(`${this.inputs.url}&limit=${this.itemLimit}`, {
+                const response = await fetch(`${this.settings.url}/api/v1/executions?includeData=true&limit=${this.itemLimit}`, {
                     headers: {
-                        "X-N8N-API-KEY": this.inputs.token
+                        "X-N8N-API-KEY": this.settings.key
                     }
                 });
                 
@@ -187,15 +194,31 @@ export default {
 
             const expandedCount = Object.values(this.expandedItems).filter(Boolean).length;
             this.allExpanded = expandedCount === this.n8nData.data.length;
+        },
+        async logout(){
+            console.log('logout');
+            await Preferences.remove({key: "settings"});
+            this.settings = null;
+            document.location = '/';
+        }, 
+        async refresh(){
+            await this.fetchData();
         }
     },
     async mounted() {
         // Load data on component mount
+        let result = await Preferences.get({ key: "settings" });
+        this.settings = JSON.parse(result.value);
         await this.fetchData();
-    }
+    },
 };
 </script>
 <style>
+.nav{
+    display:flex;
+    justify-content: space-between;
+}
+
 .label{
     font-weight: bold;
 }
