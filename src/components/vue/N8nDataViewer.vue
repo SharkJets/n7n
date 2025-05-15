@@ -1,5 +1,10 @@
 <template>
     <div class="n8n-data-viewer">
+        <div class="nav">
+            <button v-on:click="refresh">Refresh</button>
+            <button v-on:click="logout">Logout</button>
+        </div>
+
         <div v-if="isLoading" class="loading">
             Loading n8n data...
         </div>
@@ -11,10 +16,6 @@
 
         <div v-else-if="n8nData" class="data-container">
             <div class="heading">
-                <div class="nav">
-                    <button v-on:click="refresh">Refresh</button>
-                    <button v-on:click="logout">Logout</button>
-                </div>
                 <div class="data-summary">
                     <div class="data-controls">
                         <label for="limit-select">Show:</label>
@@ -128,8 +129,11 @@ export default {
                         "X-N8N-API-KEY": this.settings.key
                     }
                 });
-                
+                console.log(response);
+                this.dump = JSON.stringify(response);
+
                 if (!response.ok) {
+                    this.error = `Failed to load data: ${response.status} ${response.statusText}`;
                     throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
                 }
                 
@@ -155,8 +159,8 @@ export default {
                 
                 this.isLoading = false;
             } catch (err) {
-                this.error = err.message;
                 this.isLoading = false;
+                console.log(this.error);
                 console.error('Error loading n8n data:', err);
             }
         },
