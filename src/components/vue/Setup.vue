@@ -24,7 +24,6 @@ export default {
     methods: {
         async getSettings() {
             this.settings = await Preferences.get({ key: "settings" });
-            console.log(`set: ${this.settings}`);
         },
         async SetSettings() {
             await Preferences.set({
