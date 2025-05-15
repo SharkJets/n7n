@@ -1,5 +1,5 @@
 <template>
-    <div v-if="settings == null || settings.url == null" class="setup-container">
+    <div v-if="!isValid" class="setup-container">
         <h1>Enter your API settings</h1>
         <div class="form-group">
             <label for="api_url">Domain:</label>
@@ -10,10 +10,11 @@
             <input type="text" name="api_key" id="api_key" v-model="key" placeholder="xyz123..." />
         </div>
         <div class="form-actions">
-            <button v-on:click="setSettings">Save</button>
+            <button v-on:click="checkInputs">Save</button>
         </div>
+        <div v-if="error.trim() != ''" class="error" v-html="error"></div>
     </div>
-    <div v-if="settings != null && settings.url != null ">
+    <div v-if="isValid">
         <slot></slot>
     </div>
 </template>
@@ -25,10 +26,13 @@ export default {
             url: '',
             key: '',
             settings: null,
+            isValid: false,
+            error: '',
         };
     },
     async mounted() {
         await this.getSettings();
+        await this.checkInputs();
     },
     methods: {
         async getSettings() {
@@ -48,10 +52,39 @@ export default {
             });
             await this.getSettings();
         },
+        async checkInputs(){
+            this.error = '';
+            await this.setSettings();
+            try {
+                let response = await fetch(`${this.settings.url}/api/v1/workflows?active=true&excludePinnedData=true&limit=100`, {
+                    headers: {
+                        "X-N8N-API-KEY": this.settings.key
+                    }
+                });
+
+                if (response.ok) {
+                    this.isValid = true;
+                }else{
+                    throw new Error("Could not connect, <br />please check your values..");
+                }                  
+            } catch (error) {
+                console.log(error);
+                this.error = error.message;
+            }   
+        }
     },
 };
 </script>
 <style>
+.error{
+    background-color: rgb(255, 137, 137);
+    color: rgb(255, 255, 255);
+    margin: 1rem;
+    padding: 1rem;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
 .setup-container {
     max-width: 500px;
     margin: 2rem auto;
