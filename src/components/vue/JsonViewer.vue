@@ -2,11 +2,10 @@
   <div class="json-viewer-component">
     <template v-if="isObject(data)">
       <div class="json-object-container" :class="{ 'root-item': level === 0 }">
-        <div class="json-object-header" @click="toggleExpand">
-          <div class="header-left">
-            <span class="toggle-icon">{{ isExpanded ? '▼' : '►' }}</span>
+        <div class="json-object-header" @click="toggleExpand"  v-if="!isEmpty(data)">
+          <div class="header-left-inner">
+            <span class="toggle-icon" :class="isExpanded ? '' : 'spin'">▼</span>
             <span class="json-key" v-if="propKey">{{ propKey }}</span>
-            <span class="json-type">{{ isArray(data) ? 'Array' : 'Object' }}</span>
             <span class="json-preview">{{ getObjectPreview(data) }}</span>
           </div>
         </div>
@@ -71,6 +70,10 @@ export default {
     toggleExpand() {
       this.isExpanded = !this.isExpanded;
     },
+    isEmpty(obj){
+      const count = Object.keys(obj).length;
+      if (count === 0) return true;
+    },
     getObjectPreview(obj) {
       const isArray = Array.isArray(obj);
       const count = Object.keys(obj).length;
@@ -120,7 +123,7 @@ export default {
   justify-content: space-between;
 }
 
-.header-left {
+.header-left-inner {
   display: flex;
   align-items: center;
   flex-wrap: wrap;

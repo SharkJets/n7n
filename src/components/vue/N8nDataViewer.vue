@@ -56,9 +56,11 @@
                 <div v-for="(item, index) in filteredData" :key="index" class="data-item">
                     <div class="data-header" @click="toggleExpanded(index)">
                         <div class="header-left">
-                            <span class="expand-icon">{{ expandedItems[index] ? '▼' : '►' }}</span>
-                            <h3>{{ item.workflowData.name }}</h3>
-                            <div>{{ new Date(item.startedAt).toISOString().slice(0, 16).replace('T', ' ') }}</div>
+                            <div class="item-toggle">
+                                <span class="expand-icon" :class="expandedItems[index] ? '' : 'spin' ">▼</span>
+                                <h3>{{ item.workflowData.name }}</h3>                                
+                            </div>
+                            <div class="headerdate">{{ new Date(item.startedAt).toISOString().slice(0, 16).replace('T', ' ') }}</div>
                             <div v-if="item.data.resultData.runData['Error Trigger']">
                                 <div><span class="label">Workflow:</span></div>
                                 <div>{{  item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.workflow.name  }}</div>
@@ -295,6 +297,13 @@ export default {
     color: #d32f2f;
 }
 
+.data-list{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background-color: #eee;
+}
+
 .data-container {
     background: white;
     border-radius: 8px;
@@ -362,15 +371,21 @@ export default {
 
 .data-item {
     border-bottom: 1px solid #e0e4e8;
+    background-color: #fff;
+    border-radius: 5px;
 }
 
 .data-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     padding: 1rem 1.5rem;
     cursor: pointer;
     transition: background-color 0.2s;
+}
+
+.headerdate{
+    font-size: small;
 }
 
 .data-header:hover {
@@ -379,8 +394,17 @@ export default {
 
 .header-left {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.5rem;
+    flex-direction: column;
+}
+
+.item-toggle{
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-evenly;
+    gap: 1rem;
 }
 
 .expand-icon {
