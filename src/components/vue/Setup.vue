@@ -10,7 +10,7 @@
             <input type="text" name="api_key" id="api_key" v-model="key" placeholder="xyz123..." />
         </div>
         <div class="form-actions">
-            <button v-on:click="checkInputs">Save</button>
+            <button v-on:click="onSaveClick">Save</button>
         </div>
         <div v-if="error.trim() != ''" class="error" v-html="error"></div>
     </div>
@@ -36,8 +36,12 @@ export default {
     },
     methods: {
         async getSettings() {
-            let result  = await Preferences.get({ key: "settings" });
+            let result  = await Preferences.get({ key: "settings" });            
             this.settings = JSON.parse(result.value);
+            if(this.settings != null){
+                this.url = this.settings.url;
+                this.key = this.settings.key;
+            }
         },
         async setSettings() {
             if(this.url.trim() == '' || this.key.trim() == '') {
@@ -52,7 +56,19 @@ export default {
             });
             await this.getSettings();
         },
+        async onSaveClick(){
+            if(this.url.trim() == '' || this.key.trim() == '') {
+                this.error = 'You must provide the required inputs.';
+                return;
+            }
+            await this.checkInputs();
+        },
         async checkInputs(){
+            if(this.url.trim() == '' || this.key.trim() == '') {
+                
+                return;
+            }
+
             this.error = '';
             await this.setSettings();
             try {
