@@ -1,13 +1,16 @@
 <template>
     <div class="n8n-data-viewer">
-        <div class="nav">
-            <button v-on:click="refresh">Refresh</button>
-            <div>N7N</div>
-            <button v-on:click="logout">Logout</button>
+        <div class="navparent">
+            <div class="nav">
+                <button v-on:click="refresh">Refresh</button>
+                <div><img style="border-radius: 50%;" src="/logo.png" alt="logo" width="45px"></div>
+                <button v-on:click="logout">Logout</button>
+            </div>            
         </div>
 
         <div v-if="isLoading" class="loading">
-            Loading n8n data...
+            <div>Loading n8n data...</div>
+            <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>            
         </div>
 
         <div v-else-if="error" class="error-card">
@@ -60,7 +63,9 @@
                                 <span class="expand-icon" :class="expandedItems[index] ? '' : 'spin' ">▼</span>
                                 <h3>{{ item.workflowData.name }}</h3>                                
                             </div>
-                            <div class="headerdate">{{ new Date(item.startedAt).toISOString().slice(0, 16).replace('T', ' ') }}</div>
+                            <div class="headerdate">
+                                {{ new Date(item.startedAt).toISOString().slice(0, 16).replace('T', ' ') }} - {{ item.mode }}
+                            </div>
                             <div v-if="item.data.resultData.runData['Error Trigger']">
                                 <div><span class="label">Workflow:</span></div>
                                 <div>{{  item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.workflow.name  }}</div>
@@ -79,7 +84,7 @@
                             </div>                            
                         </div>
                         <span class="status" :class="{ 'finished': item.finished, 'pending': !item.finished }">
-                            {{ item.mode }}
+                            {{ item.finished ? 'complete' : 'incomplete' }}
                         </span>
                     </div>
 
@@ -272,6 +277,7 @@ export default {
     display:flex;
     justify-content: space-between;
     padding: 1rem;
+    align-items: center;
 }
 
 .label{
@@ -480,4 +486,69 @@ export default {
     width: 100%;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
+
+/** spinner **/
+
+.lds-ellipsis,
+.lds-ellipsis div {
+  box-sizing: border-box;
+}
+.lds-ellipsis {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.lds-ellipsis div {
+  position: absolute;
+  top: 33.33333px;
+  width: 13.33333px;
+  height: 13.33333px;
+  border-radius: 50%;
+  background: currentColor;
+  animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+.lds-ellipsis div:nth-child(1) {
+  left: 8px;
+  animation: lds-ellipsis1 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(2) {
+  left: 8px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(3) {
+  left: 32px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(4) {
+  left: 56px;
+  animation: lds-ellipsis3 0.6s infinite;
+}
+@keyframes lds-ellipsis1 {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes lds-ellipsis3 {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0);
+  }
+}
+@keyframes lds-ellipsis2 {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(24px, 0);
+  }
+}
+
+
+  
 </style>

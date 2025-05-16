@@ -11,19 +11,38 @@
         <title>n7n</title>
     </head>
     <body>
-        <slot />
+        <top>&nbsp;</top>
+        <div class="content">
+            <slot />
+        </div>
+        <footer>&nbsp;</footer>
     </body>
 </html>
 
 <style is:global>
+    footer{
+        height: 2.5rem;
+        width:100%;
+    }
+
+    top{
+        height: 2.5rem;
+        width: 100%;
+    }
+
+    .content{
+        border-radius: 10px;
+        background: linear-gradient(to bottom right, #f8f9fb, #84b1f5);
+        background-attachment: fixed;
+        height: 100vh;
+        overflow: auto;
+    }
+
     .spin {
         rotate: -90deg;
     }
 
-    body {
-        padding-top: 3rem;
-        background: linear-gradient(to bottom right, #f8f9fb, #84b1f5);
-        background-attachment: fixed;
+    body {        
         margin: 0;
         font-family:
             system-ui,
@@ -31,7 +50,11 @@
             BlinkMacSystemFont,
             sans-serif;
         color: #2d3748;
-        min-height: 100vh;
+        max-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background-color: rgb(92, 92, 92);
     }
 
     button {
