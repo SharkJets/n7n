@@ -20,6 +20,7 @@
 </template>
 <script>
 import { Preferences } from "@capacitor/preferences";
+import {CapacitorHttp} from "@capacitor/core";
 export default {
     data() {
         return {
@@ -72,13 +73,14 @@ export default {
             this.error = '';
             await this.setSettings();
             try {
-                let response = await fetch(`${this.settings.url}/api/v1/workflows?active=true&excludePinnedData=true&limit=100`, {
-                    headers: {
-                        "X-N8N-API-KEY": this.settings.key
-                    }
-                });
+                const options = {
+                    url: `${this.settings.url}/api/v1/workflows?active=true&excludePinnedData=true&limit=100`,
+                    headers: { "X-N8N-API-KEY": this.settings.key }
+                };
 
-                if (response.ok) {
+                const response = await CapacitorHttp.get(options);
+
+                if (response.status == 200) {
                     this.isValid = true;
                 }else{
                     throw new Error("Could not connect, <br />please check your values..");

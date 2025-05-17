@@ -3,14 +3,19 @@
         <div class="navparent">
             <div class="nav">
                 <button v-on:click="refresh">Refresh</button>
-                <div><img style="border-radius: 50%;" src="/logo.png" alt="logo" width="45px"></div>
+                <div><img style="border-radius: 50%" src="/logo.png" alt="logo" width="45px" /></div>
                 <button v-on:click="logout">Logout</button>
-            </div>            
+            </div>
         </div>
 
         <div v-if="isLoading" class="loading">
             <div>Loading n8n data...</div>
-            <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>            
+            <div class="lds-ellipsis">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
         </div>
 
         <div v-else-if="error" class="error-card">
@@ -36,10 +41,10 @@
                             <option value="all">All</option>
                             <option value="success">success</option>
                             <option value="waiting">waiting</option>
-                            <option value="error">error</option>                            
+                            <option value="error">error</option>
                         </select>
                     </div>
-                </div>                
+                </div>
             </div>
             <div class="heading">
                 <div class="data-summary">
@@ -52,7 +57,7 @@
                             </select>
                         </div>
                     </div>
-                </div>                
+                </div>
             </div>
 
             <div class="data-list">
@@ -60,40 +65,38 @@
                     <div class="data-header" @click="toggleExpanded(index)">
                         <div class="header-left">
                             <div class="item-toggle">
-                                <span class="expand-icon" :class="expandedItems[index] ? '' : 'spin' ">▼</span>
-                                <h3>{{ item.workflowData.name }}</h3>                                
+                                <span class="expand-icon" :class="expandedItems[index] ? '' : 'spin'">▼</span>
+                                <h3>{{ item.workflowData.name }}</h3>
                             </div>
-                            <div class="headerdate">
-                                {{ new Date(item.startedAt).toISOString().slice(0, 16).replace('T', ' ') }} - {{ item.mode }}
-                            </div>
+                            <div class="headerdate">{{ new Date(item.startedAt).toISOString().slice(0, 16).replace("T", " ") }} - {{ item.mode }}</div>
                             <div v-if="item.data.resultData.runData['Error Trigger']">
                                 <div><span class="label">Workflow:</span></div>
-                                <div>{{  item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.workflow.name  }}</div>
+                                <div>{{ item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.workflow.name }}</div>
                                 <div><span class="label">Error:</span></div>
-                                <div>{{  item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.execution.error.message  }}</div>
+                                <div>{{ item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.execution.error.message }}</div>
                                 <div><span class="label">Last Node:</span></div>
-                                <div>{{  item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.execution.lastNodeExecuted  }}</div>
+                                <div>{{ item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.execution.lastNodeExecuted }}</div>
                             </div>
                             <div v-if="item.data.resultData.error">
                                 <div><span class="label">Error:</span></div>
-                                <div>{{  item.data.resultData.error.message  }}</div>
+                                <div>{{ item.data.resultData.error.message }}</div>
                                 <div v-if="item.data.resultData.error.node">
                                     <div><span class="label">Node:</span></div>
-                                    <div>{{  item.data.resultData.error.node.name  }}</div>
+                                    <div>{{ item.data.resultData.error.node.name }}</div>
                                 </div>
-                            </div>                            
+                            </div>
                         </div>
-                        <span class="status" :class="{ 'finished': item.finished, 'pending': !item.finished }">
-                            {{ item.finished ? 'complete' : 'incomplete' }}
+                        <span class="status" :class="{ finished: item.finished, pending: !item.finished }">
+                            {{ item.finished ? "complete" : "incomplete" }}
                         </span>
                     </div>
 
-                    <div class="data-details" :class="{ 'expanded': expandedItems[index] }">
+                    <div class="data-details" :class="{ expanded: expandedItems[index] }">
                         <div class="basic-details">
                             <p><strong>ID:</strong> {{ item.id }}</p>
                             <p><strong>Mode:</strong> {{ item.mode }}</p>
                             <p><strong>Started:</strong> {{ new Date(item.startedAt).toLocaleString() }}</p>
-                            <p><strong>Stopped:</strong> {{ item.stoppedAt ? new Date(item.stoppedAt).toLocaleString() : 'N/A' }}</p>
+                            <p><strong>Stopped:</strong> {{ item.stoppedAt ? new Date(item.stoppedAt).toLocaleString() : "N/A" }}</p>
                         </div>
 
                         <div v-if="expandedItems[index]" class="extended-details">
@@ -113,12 +116,13 @@
     </div>
 </template>
 <script>
-import JsonViewer from './JsonViewer.vue';
+import JsonViewer from "./JsonViewer.vue";
 import { Preferences } from "@capacitor/preferences";
+import {CapacitorHttp} from "@capacitor/core";
 
 export default {
     components: {
-        JsonViewer
+        JsonViewer,
     },
     data() {
         return {
@@ -129,25 +133,25 @@ export default {
             error: null,
             expandedItems: {},
             allExpanded: false,
-            selectedMode: 'all',
+            selectedMode: "all",
             availableModes: [],
             status: true,
-            selectedStatus: 'all',
+            selectedStatus: "all",
             availableWorkflows: [],
-            selectedWorkflow: 'all',
-            hasError: false
+            selectedWorkflow: "all",
+            hasError: false,
         };
     },
     computed: {
         filteredData() {
             if (!this.n8nData || !this.n8nData.data) return [];
-            
-            if (this.selectedMode === 'all') {
+
+            if (this.selectedMode === "all") {
                 return this.n8nData.data;
             }
-            
-            return this.n8nData.data.filter(item => item.mode === this.selectedMode);
-        }
+
+            return this.n8nData.data.filter((item) => item.mode === this.selectedMode);
+        },
     },
     methods: {
         async fetchData() {
@@ -157,56 +161,60 @@ export default {
                 this.expandedItems = {};
                 this.allExpanded = false;
 
-                //https://n8n.sharkjets.com/api/v1/workflows?active=true&excludePinnedData=true&limit=100
-                let response = await fetch(`${this.settings.url}/api/v1/workflows?active=true&excludePinnedData=true&limit=100`, {
-                    headers: {
-                        "X-N8N-API-KEY": this.settings.key
-                    }
-                });
+                let options = {
+                    url: `${this.settings.url}/api/v1/workflows?active=true&excludePinnedData=true&limit=100`,
+                    headers: { "X-N8N-API-KEY": this.settings.key },
+                };
 
-                if (!response.ok) {
+                let response = await CapacitorHttp.get(options);
+
+                if (response.status != 200) {
                     this.error = `Failed to load data: ${response.status} ${response.statusText}`;
                     throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
                 }
-                
-                this.n8nData = await response.json();     
-                    const flows = new Set();
-                    let knownFlows = [];
-                    this.n8nData.data.forEach(item => {
-                        if (item) {
-                            if(knownFlows.includes(item.name)) return;
-                            knownFlows.push(item.name);
-                            flows.add({name: item.name, id: item.id});
-                        }
-                    });
-                    this.availableWorkflows = Array.from(flows).sort();                            
-                
+
+                this.n8nData = await response.data;
+                const flows = new Set();
+                let knownFlows = [];
+                this.n8nData.data.forEach((item) => {
+                    if (item) {
+                        if (knownFlows.includes(item.name)) return;
+                        knownFlows.push(item.name);
+                        flows.add({ name: item.name, id: item.id });
+                    }
+                });
+                this.availableWorkflows = Array.from(flows).sort();
+
                 // Fetch the n8n data with the selected limit
-                let statusFilter = this.selectedStatus != 'all' ? `&status=${this.selectedStatus}` : '';
-                let workflowFilter = this.selectedWorkflow != 'all' ? `&workflowId=${this.selectedWorkflow}` : '';
-                response = await fetch(`${this.settings.url}/api/v1/executions?includeData=true&limit=${this.itemLimit}${statusFilter}${workflowFilter}`, {
-                    headers: {
-                        "X-N8N-API-KEY": this.settings.key
-                    }
-                });
+                let statusFilter = this.selectedStatus != "all" ? `&status=${this.selectedStatus}` : "";
+                let workflowFilter = this.selectedWorkflow != "all" ? `&workflowId=${this.selectedWorkflow}` : "";
 
-                if (!response.ok) {
+                options = {
+                    url: `${this.settings.url}/api/v1/executions?includeData=true&limit=${this.itemLimit}${statusFilter}${workflowFilter}`,
+                    headers: { "X-N8N-API-KEY": this.settings.key },
+                };
+
+                response = await CapacitorHttp.get(options);                
+
+                if (response.status != 200) {
                     this.error = `Failed to load data: ${response.status} ${response.statusText}`;
                     throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
                 }
-                
-                this.n8nData = await response.json();
-                
+
+                console.log(response);
+
+                this.n8nData = await response.data;
+
                 // Extract unique modes from data
                 if (this.n8nData && this.n8nData.data) {
                     const modes = new Set();
-                    this.n8nData.data.forEach(item => {
+                    this.n8nData.data.forEach((item) => {
                         if (item.mode) {
                             modes.add(item.mode);
                         }
                     });
-                    this.availableModes = Array.from(modes).sort();                   
-                    
+                    this.availableModes = Array.from(modes).sort();
+
                     // Initialize expandedItems with all items collapsed
                     const initialExpandedItems = {};
                     this.n8nData.data.forEach((_, index) => {
@@ -214,7 +222,7 @@ export default {
                     });
                     this.expandedItems = initialExpandedItems;
                 }
-                
+
                 this.isLoading = false;
             } catch (err) {
                 this.isLoading = false;
@@ -229,7 +237,7 @@ export default {
             // Using direct assignment instead of $set
             this.expandedItems = {
                 ...this.expandedItems,
-                [index]: !this.expandedItems[index]
+                [index]: !this.expandedItems[index],
             };
             this.updateAllExpandedState();
         },
@@ -255,14 +263,14 @@ export default {
             const expandedCount = Object.values(this.expandedItems).filter(Boolean).length;
             this.allExpanded = expandedCount === this.n8nData.data.length;
         },
-        async logout(){
-            await Preferences.remove({key: "settings"});
+        async logout() {
+            await Preferences.remove({ key: "settings" });
             this.settings = null;
-            document.location = '/';
-        }, 
-        async refresh(){
+            document.location = "/";
+        },
+        async refresh() {
             await this.fetchData();
-        }
+        },
     },
     async mounted() {
         // Load data on component mount
@@ -273,14 +281,14 @@ export default {
 };
 </script>
 <style>
-.nav{
-    display:flex;
+.nav {
+    display: flex;
     justify-content: space-between;
     padding: 1rem;
     align-items: center;
 }
 
-.label{
+.label {
     font-weight: bold;
 }
 
@@ -290,7 +298,9 @@ export default {
     margin: 0 auto;
 }
 
-.loading, .error-card, .no-data {
+.loading,
+.error-card,
+.no-data {
     text-align: center;
     padding: 2rem;
     background: #f8f9fa;
@@ -303,7 +313,7 @@ export default {
     color: #d32f2f;
 }
 
-.data-list{
+.data-list {
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -390,7 +400,7 @@ export default {
     transition: background-color 0.2s;
 }
 
-.headerdate{
+.headerdate {
     font-size: small;
 }
 
@@ -405,7 +415,7 @@ export default {
     flex-direction: column;
 }
 
-.item-toggle{
+.item-toggle {
     display: flex;
     align-items: center;
     flex-direction: row;
@@ -491,64 +501,61 @@ export default {
 
 .lds-ellipsis,
 .lds-ellipsis div {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 .lds-ellipsis {
-  display: inline-block;
-  position: relative;
-  width: 80px;
-  height: 80px;
+    display: inline-block;
+    position: relative;
+    width: 80px;
+    height: 80px;
 }
 .lds-ellipsis div {
-  position: absolute;
-  top: 33.33333px;
-  width: 13.33333px;
-  height: 13.33333px;
-  border-radius: 50%;
-  background: currentColor;
-  animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    position: absolute;
+    top: 33.33333px;
+    width: 13.33333px;
+    height: 13.33333px;
+    border-radius: 50%;
+    background: currentColor;
+    animation-timing-function: cubic-bezier(0, 1, 1, 0);
 }
 .lds-ellipsis div:nth-child(1) {
-  left: 8px;
-  animation: lds-ellipsis1 0.6s infinite;
+    left: 8px;
+    animation: lds-ellipsis1 0.6s infinite;
 }
 .lds-ellipsis div:nth-child(2) {
-  left: 8px;
-  animation: lds-ellipsis2 0.6s infinite;
+    left: 8px;
+    animation: lds-ellipsis2 0.6s infinite;
 }
 .lds-ellipsis div:nth-child(3) {
-  left: 32px;
-  animation: lds-ellipsis2 0.6s infinite;
+    left: 32px;
+    animation: lds-ellipsis2 0.6s infinite;
 }
 .lds-ellipsis div:nth-child(4) {
-  left: 56px;
-  animation: lds-ellipsis3 0.6s infinite;
+    left: 56px;
+    animation: lds-ellipsis3 0.6s infinite;
 }
 @keyframes lds-ellipsis1 {
-  0% {
-    transform: scale(0);
-  }
-  100% {
-    transform: scale(1);
-  }
+    0% {
+        transform: scale(0);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 @keyframes lds-ellipsis3 {
-  0% {
-    transform: scale(1);
-  }
-  100% {
-    transform: scale(0);
-  }
+    0% {
+        transform: scale(1);
+    }
+    100% {
+        transform: scale(0);
+    }
 }
 @keyframes lds-ellipsis2 {
-  0% {
-    transform: translate(0, 0);
-  }
-  100% {
-    transform: translate(24px, 0);
-  }
+    0% {
+        transform: translate(0, 0);
+    }
+    100% {
+        transform: translate(24px, 0);
+    }
 }
-
-
-  
 </style>
