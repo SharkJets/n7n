@@ -66,23 +66,23 @@
                         <div class="header-left">
                             <div class="item-toggle">
                                 <span class="expand-icon" :class="expandedItems[index] ? '' : 'spin'">▼</span>
-                                <h3>{{ item.workflowData.name }}</h3>
+                                <h4>{{ item.workflowData.name }}</h4>
                             </div>
-                            <div class="headerdate">{{ new Date(item.startedAt).toISOString().slice(0, 16).replace("T", " ") }} - {{ item.mode }}</div>
+                            <div class="headerdate">{{ item.mode }}{{ duration(item.startedAt, item.stoppedAt) }}</div>
                             <div v-if="item.data.resultData.runData['Error Trigger']">
                                 <div><span class="label">Workflow:</span></div>
-                                <div>{{ item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.workflow.name }}</div>
+                                <div><code>{{ item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.workflow.name }}</code></div>
                                 <div><span class="label">Error:</span></div>
-                                <div>{{ item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.execution.error.message }}</div>
+                                <div><code>{{ item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.execution.error.message }}</code></div>
                                 <div><span class="label">Last Node:</span></div>
-                                <div>{{ item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.execution.lastNodeExecuted }}</div>
+                                <div><code>{{ item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.execution.lastNodeExecuted }}</code></div>
                             </div>
                             <div v-if="item.data.resultData.error">
                                 <div><span class="label">Error:</span></div>
-                                <div>{{ item.data.resultData.error.message }}</div>
+                                <div><code>{{ item.data.resultData.error.message }}</code></div>
                                 <div v-if="item.data.resultData.error.node">
                                     <div><span class="label">Node:</span></div>
-                                    <div>{{ item.data.resultData.error.node.name }}</div>
+                                    <div><code>{{ item.data.resultData.error.node.name }}</code></div>
                                 </div>
                             </div>
                         </div>
@@ -271,6 +271,14 @@ export default {
         async refresh() {
             await this.fetchData();
         },
+        duration(input1, input2){
+            if(!input2) return;
+            let date1 = new Date(input1);
+            let date2 = new Date(input2)
+            const diffInMs = Math.abs(date2 - date1);
+            const diffInSeconds = Math.floor(diffInMs / 1000);
+            return ` - ${diffInSeconds} secs`
+        }
     },
     async mounted() {
         // Load data on component mount
@@ -281,6 +289,9 @@ export default {
 };
 </script>
 <style>
+h4{
+    margin:0;
+}
 .nav {
     display: flex;
     justify-content: space-between;
