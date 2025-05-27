@@ -26,28 +26,6 @@
         <div v-else-if="n8nData" class="data-container">
             <div class="heading">
                 <div class="data-summary">
-                    <div class="data-controls">
-                        <label for="limit-select">Show:</label>
-                        <select id="limit-select" v-model="itemLimit" @change="fetchData">
-                            <option value="10">10 entries</option>
-                            <option value="20">20 entries</option>
-                            <option value="50">50 entries</option>
-                            <option value="100">100 entries</option>
-                        </select>
-                    </div>
-                    <div class="data-controls">
-                        <label for="limit-select">Status:</label>
-                        <select id="limit-select" v-model="selectedStatus" @change="fetchData">
-                            <option value="all">All</option>
-                            <option value="success">success</option>
-                            <option value="waiting">waiting</option>
-                            <option value="error">error</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="heading">
-                <div class="data-summary">
                     <div class="controls">
                         <div class="mode-filter">
                             <label for="mode-select">Workflow:</label>
@@ -59,7 +37,19 @@
                     </div>
                 </div>
             </div>
-
+            <div class="heading">
+                <div class="data-summary">
+                    <div class="data-controls">
+                        <label for="limit-select">Status:</label>
+                        <select id="limit-select" v-model="selectedStatus" @change="fetchData">
+                            <option value="all">All</option>
+                            <option value="success">success</option>
+                            <option value="waiting">waiting</option>
+                            <option value="error">error</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
             <div class="data-list">
                 <div v-for="(item, index) in filteredData" :key="index" class="data-item">
                     <div class="data-header" @click="toggleExpanded(index)">
@@ -107,6 +97,9 @@
                         </div>
                     </div>
                 </div>
+                <div v-if="nextCursor != ''" style="text-align: center; padding: 1rem;">
+                    <button v-on:click="setCursor">Next</button>
+                </div>
             </div>
         </div>
 
@@ -119,6 +112,18 @@
 import JsonViewer from "./JsonViewer.vue";
 import { Preferences } from "@capacitor/preferences";
 import {CapacitorHttp} from "@capacitor/core";
+import Bugsnag from '@bugsnag/js'
+import BugsnagPerformance from '@bugsnag/browser-performance'
+
+Bugsnag.start({ 
+    apiKey: '2fd56032f83bef4ccf0d7576e8427d1b',
+    onError: function (event) {
+        let data = this.$data;
+        data.settings.key = '';
+        event.addMetadata('data', data);
+    }
+})
+BugsnagPerformance.start({ apiKey: '2fd56032f83bef4ccf0d7576e8427d1b' })
 
 export default {
     components: {
@@ -127,7 +132,7 @@ export default {
     data() {
         return {
             settings: null,
-            itemLimit: 10,
+            itemLimit: 5,
             n8nData: null,
             isLoading: true,
             error: null,
@@ -140,6 +145,8 @@ export default {
             availableWorkflows: [],
             selectedWorkflow: "all",
             hasError: false,
+            cursor: '',
+            nextCursor: ''
         };
     },
     computed: {
@@ -188,22 +195,22 @@ export default {
                 // Fetch the n8n data with the selected limit
                 let statusFilter = this.selectedStatus != "all" ? `&status=${this.selectedStatus}` : "";
                 let workflowFilter = this.selectedWorkflow != "all" ? `&workflowId=${this.selectedWorkflow}` : "";
+                let cursorFilter = this.cursor != '' ? `&cursor=${this.cursor}` : '';
 
                 options = {
-                    url: `${this.settings.url}/api/v1/executions?includeData=true&limit=${this.itemLimit}${statusFilter}${workflowFilter}`,
+                    url: `${this.settings.url}/api/v1/executions?includeData=true&limit=${this.itemLimit}${statusFilter}${workflowFilter}${cursorFilter}`,
                     headers: { "X-N8N-API-KEY": this.settings.key },
-                };
+                }
 
-                response = await CapacitorHttp.get(options);                
+                response = await CapacitorHttp.get(options);     
 
                 if (response.status != 200) {
                     this.error = `Failed to load data: ${response.status} ${response.statusText}`;
                     throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
                 }
 
-                console.log(response);
-
                 this.n8nData = await response.data;
+                this.nextCursor = this.n8nData.nextCursor;
 
                 // Extract unique modes from data
                 if (this.n8nData && this.n8nData.data) {
@@ -269,6 +276,7 @@ export default {
             document.location = "/";
         },
         async refresh() {
+            this.cursor = '';
             await this.fetchData();
         },
         duration(input1, input2){
@@ -278,6 +286,10 @@ export default {
             const diffInMs = Math.abs(date2 - date1);
             const diffInSeconds = Math.floor(diffInMs / 1000);
             return ` - ${diffInSeconds} secs`
+        },
+        async setCursor(){
+            this.cursor = this.nextCursor;
+            await this.fetchData();
         }
     },
     async mounted() {
