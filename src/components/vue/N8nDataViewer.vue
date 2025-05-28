@@ -58,8 +58,8 @@
                                 <span class="expand-icon" :class="expandedItems[index] ? '' : 'spin'">▼</span>
                                 <h4>{{ item.workflowData.name }}</h4>
                             </div>
-                            <div class="headerdate">{{ item.mode }}{{ duration(item.startedAt, item.stoppedAt) }}</div>
-                            <div v-if="item.data.resultData.runData['Error Trigger']">
+                            <div class="headerdate">{{ item.mode }} - {{ new Date(item.startedAt).toLocaleString() }}</div>
+                            <div v-if="item.data && item.data.resultData.runData['Error Trigger']">
                                 <div><span class="label">Workflow:</span></div>
                                 <div><code>{{ item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.workflow.name }}</code></div>
                                 <div><span class="label">Error:</span></div>
@@ -67,7 +67,7 @@
                                 <div><span class="label">Last Node:</span></div>
                                 <div><code>{{ item.data.resultData.runData["Error Trigger"][0].data.main[0][0].json.execution.lastNodeExecuted }}</code></div>
                             </div>
-                            <div v-if="item.data.resultData.error">
+                            <div v-if="item.data && item.data.resultData.error">
                                 <div><span class="label">Error:</span></div>
                                 <div><code>{{ item.data.resultData.error.message }}</code></div>
                                 <div v-if="item.data.resultData.error.node">
@@ -115,19 +115,33 @@ import {CapacitorHttp} from "@capacitor/core";
 import Bugsnag from '@bugsnag/js'
 import BugsnagPerformance from '@bugsnag/browser-performance'
 
+// Initialize Bugsnag at module level without the error handler
 Bugsnag.start({ 
-    apiKey: '2fd56032f83bef4ccf0d7576e8427d1b',
-    onError: function (event) {
-        let data = this.$data;
-        data.settings.key = '';
-        event.addMetadata('data', data);
-    }
+    apiKey: '2fd56032f83bef4ccf0d7576e8427d1b'
 })
 BugsnagPerformance.start({ apiKey: '2fd56032f83bef4ccf0d7576e8427d1b' })
 
 export default {
     components: {
         JsonViewer,
+    },
+    created() {
+        // Configure Bugsnag error handler with access to component instance
+        const vm = this;
+        Bugsnag.addOnError(async function (event) {            
+            // You can now access any component data
+            const sanitizedData = vm.$data;
+            console.log(JSON.stringify(sanitizedData).length);
+            if (sanitizedData.settings) {
+                sanitizedData.settings = { ...sanitizedData.settings, key: '[REDACTED]' };
+                sanitizedData.n8nData.data.forEach(el=>{
+                    el.data =  '[REDACTED]';
+                });
+            }
+            console.log(JSON.stringify(sanitizedData).length);
+            console.log(sanitizedData);
+            event.addMetadata('vueComponentData', sanitizedData);
+        });
     },
     data() {
         return {
